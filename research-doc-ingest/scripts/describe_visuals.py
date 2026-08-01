@@ -51,7 +51,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--api-key-env",
-        default=os.getenv("RESEARCH_DOC_API_KEY_ENV", "OPENAI_API_KEY"),
+        default="OPENAI_API_KEY",
         help="Environment variable that contains the API key.",
     )
     parser.add_argument(
@@ -224,12 +224,12 @@ def clean_model_text(text: str) -> str:
     return text
 
 
-def openai_client(api_key_env: str, base_url: str | None):
+def openai_client(env_name: str, base_url: str | None):
     from openai import OpenAI  # type: ignore
 
-    api_key = os.getenv(api_key_env)
+    api_key = os.getenv(env_name)
     if not api_key:
-        raise RuntimeError(f"{api_key_env} is not set")
+        raise RuntimeError(f"{env_name} is not set")
     client_kwargs: dict[str, str] = {"api_key": api_key}
     if base_url:
         client_kwargs["base_url"] = base_url
@@ -452,8 +452,9 @@ def main() -> int:
 
     if provider == "openai" and not args.allow_external:
         raise SystemExit("Refusing external API call: pass --allow-external to send assets to the vision API.")
-    if provider == "openai" and not os.getenv(args.api_key_env):
-        raise SystemExit(f"{args.api_key_env} is not set.")
+    env_name = args.api_key_env
+    if provider == "openai" and not os.getenv(env_name):
+        raise SystemExit(f"{env_name} is not set.")
 
     replacements: dict[int, str] = {}
     rows: list[dict[str, object]] = []

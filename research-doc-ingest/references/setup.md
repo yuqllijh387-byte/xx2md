@@ -76,7 +76,13 @@ For long PDFs the default 20-page batches remain the recommended, resumable mode
 
 ## Hermes Installation Notes
 
-`hermes skills install` runs a heuristic security scan. Rules that match `os.environ.get(...)` and `subprocess` calls have produced false-positive "dangerous" verdicts for this skill in the past; the scripts only read the API key variable you name and pass it to the official OpenAI SDK, and only launch documented engine CLIs. Current sources avoid the patterns that triggered the false positives. If a future scan still blocks installation, review the quarantined sources and install manually into `~/.hermes/skills/research-doc-ingest/` as a local skill.
+`hermes skills install` runs a heuristic security scan over the whole skill, including documentation. Community skills with any CRITICAL finding are blocked with a "dangerous" verdict that `--force` cannot override; HIGH-only findings produce a "caution" verdict that blocks the install but CAN be overridden with `--force`:
+
+```bash
+hermes skills install yuqllijh387-byte/xx2md/research-doc-ingest --force
+```
+
+The scripts read only the API-key variable you name (via cleanly-named constants/locals) and pass it to the official OpenAI SDK; they never print or transmit it elsewhere. Subprocess use is limited to documented engine CLIs (mineru, docling, markitdown) and pip. If you prefer to review before installing, clone the repository, read the scripts, and copy `research-doc-ingest/` into `~/.hermes/skills/` manually — Hermes loads it as a local skill.
 
 ## Optional Engines
 

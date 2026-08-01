@@ -13,6 +13,7 @@ import sys
 
 MIN_PYTHON = (3, 10)
 MAX_PYTHON = (3, 14)
+DASHSCOPE_ENV_NAME = "DASHSCOPE_API_KEY"
 REQUIRED_DISTRIBUTIONS = {
     "mineru": "3.4.4",
     "openai": "2.45.0",
@@ -97,10 +98,10 @@ def main() -> int:
         },
         "packages": packages,
         "mineru_cli": mineru,
-        "dashscope_api_key_configured": bool(os.getenv("DASHSCOPE_API_KEY")),
+        "dashscope_api_key_configured": bool(os.getenv(DASHSCOPE_ENV_NAME)),
         "ready_for_local_conversion": all(item["ok"] for item in packages)
         and bool(mineru["ok"]),
-        "ready_for_qwen_semantics": bool(os.getenv("DASHSCOPE_API_KEY")),
+        "ready_for_qwen_semantics": bool(os.getenv(DASHSCOPE_ENV_NAME)),
     }
 
     if args.json:

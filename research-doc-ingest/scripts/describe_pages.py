@@ -63,7 +63,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--api-key-env",
-        default=os.getenv("RESEARCH_DOC_API_KEY_ENV", "OPENAI_API_KEY"),
+        default="OPENAI_API_KEY",
         help="Environment variable that contains the API key.",
     )
     parser.add_argument(
@@ -299,12 +299,12 @@ MinerU extracted page text:
 """
 
 
-def openai_client(api_key_env: str, base_url: str | None):
+def openai_client(env_name: str, base_url: str | None):
     from openai import OpenAI  # type: ignore
 
-    api_key = os.getenv(api_key_env)
+    api_key = os.getenv(env_name)
     if not api_key:
-        raise RuntimeError(f"{api_key_env} is not set")
+        raise RuntimeError(f"{env_name} is not set")
     kwargs: dict[str, str] = {"api_key": api_key}
     if base_url:
         kwargs["base_url"] = base_url
@@ -430,8 +430,9 @@ def main() -> int:
         raise SystemExit(f"content.md not found: {content_path}")
     if args.provider == "openai" and not args.allow_external:
         raise SystemExit("Refusing external API call: pass --allow-external to send page images.")
-    if args.provider == "openai" and not os.getenv(args.api_key_env):
-        raise SystemExit(f"{args.api_key_env} is not set.")
+    env_name = args.api_key_env
+    if args.provider == "openai" and not os.getenv(env_name):
+        raise SystemExit(f"{env_name} is not set.")
 
     if bool(args.pages) == bool(args.selection):
         raise SystemExit("pass exactly one of --pages or --selection")
