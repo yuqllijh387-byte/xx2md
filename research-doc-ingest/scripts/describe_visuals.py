@@ -46,23 +46,23 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--model",
-        default=os.environ.get("RESEARCH_DOC_VISION_MODEL", "gpt-4.1-mini"),
+        default=os.getenv("RESEARCH_DOC_VISION_MODEL", "gpt-4.1-mini"),
         help="Vision model name for provider=openai.",
     )
     parser.add_argument(
         "--api-key-env",
-        default=os.environ.get("RESEARCH_DOC_API_KEY_ENV", "OPENAI_API_KEY"),
+        default=os.getenv("RESEARCH_DOC_API_KEY_ENV", "OPENAI_API_KEY"),
         help="Environment variable that contains the API key.",
     )
     parser.add_argument(
         "--base-url",
-        default=os.environ.get("OPENAI_BASE_URL") or os.environ.get("RESEARCH_DOC_BASE_URL"),
+        default=os.getenv("OPENAI_BASE_URL") or os.getenv("RESEARCH_DOC_BASE_URL"),
         help="Optional OpenAI-compatible base URL.",
     )
     parser.add_argument(
         "--api-mode",
         choices=["auto", "responses", "chat"],
-        default=os.environ.get("RESEARCH_DOC_API_MODE", "auto"),
+        default=os.getenv("RESEARCH_DOC_API_MODE", "auto"),
         help="OpenAI-compatible API mode. auto tries Responses first, then Chat Completions.",
     )
     parser.add_argument(
@@ -227,7 +227,7 @@ def clean_model_text(text: str) -> str:
 def openai_client(api_key_env: str, base_url: str | None):
     from openai import OpenAI  # type: ignore
 
-    api_key = os.environ.get(api_key_env)
+    api_key = os.getenv(api_key_env)
     if not api_key:
         raise RuntimeError(f"{api_key_env} is not set")
     client_kwargs: dict[str, str] = {"api_key": api_key}
@@ -452,7 +452,7 @@ def main() -> int:
 
     if provider == "openai" and not args.allow_external:
         raise SystemExit("Refusing external API call: pass --allow-external to send assets to the vision API.")
-    if provider == "openai" and not os.environ.get(args.api_key_env):
+    if provider == "openai" and not os.getenv(args.api_key_env):
         raise SystemExit(f"{args.api_key_env} is not set.")
 
     replacements: dict[int, str] = {}

@@ -19,3 +19,4 @@ converted/
 converted_*/
 engine_output/
 .engine_work/
+.DS_Store

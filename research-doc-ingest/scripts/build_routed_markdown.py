@@ -83,6 +83,10 @@ def is_confidentiality_label(line: str) -> bool:
     )
 
 
+def is_branding_or_confidentiality(line: str) -> bool:
+    return is_confidentiality_label(line)
+
+
 def clean_mineru_page(block: str) -> str:
     source_lines = block.splitlines()
     output: list[str] = []

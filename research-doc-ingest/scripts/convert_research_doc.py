@@ -658,6 +658,20 @@ def run_mineru(source: Path, raw_dir: Path, args: argparse.Namespace) -> EngineR
         heartbeat_seconds=max(0, args.mineru_heartbeat_seconds),
     )
     warnings = []
+    if code == 0:
+        # Single-shot runs skip batching, but downstream scripts
+        # (select_semantic_pages.py) still expect the merged content list.
+        content_list = select_mineru_content_list(raw_dir)
+        if content_list is not None:
+            record = {
+                "start_page": 0,
+                "end_page": (page_count - 1) if page_count else 0,
+                "status": "completed",
+                "content_list": str(content_list.relative_to(raw_dir)),
+            }
+            merge_mineru_batch_content_lists(raw_dir, [record])
+        else:
+            warnings.append("MinerU completed without a content list")
     if args.mineru_backend == "auto":
         warnings.append(f"MinerU backend auto-selected: {backend}")
     return EngineResult(
@@ -1123,8 +1137,19 @@ def copy_raw_output(raw_parent: Path, package_dir: Path) -> str | None:
     return str(target.relative_to(package_dir))
 
 
+def ensure_localhost_no_proxy() -> None:
+    """Bypass proxies for loopback so local engine APIs (e.g. MinerU's
+    mineru-api on 127.0.0.1) stay reachable when a system proxy is set."""
+    hosts = ["127.0.0.1", "localhost", "::1"]
+    for var in ("no_proxy", "NO_PROXY"):
+        existing = [item.strip() for item in os.getenv(var, "").split(",") if item.strip()]
+        merged = existing + [host for host in hosts if host not in existing]
+        os.environ[var] = ",".join(merged)
+
+
 def main() -> int:
     args = parse_args()
+    ensure_localhost_no_proxy()
     source = Path(args.source).expanduser().resolve()
     if not source.exists():
         print(f"Source not found: {source}", file=sys.stderr)

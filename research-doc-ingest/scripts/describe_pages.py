@@ -58,17 +58,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--models",
-        default=os.environ.get("RESEARCH_DOC_PAGE_MODELS", "qwen3.7-plus"),
+        default=os.getenv("RESEARCH_DOC_PAGE_MODELS", "qwen3.7-plus"),
         help="Comma-separated model names.",
     )
     parser.add_argument(
         "--api-key-env",
-        default=os.environ.get("RESEARCH_DOC_API_KEY_ENV", "OPENAI_API_KEY"),
+        default=os.getenv("RESEARCH_DOC_API_KEY_ENV", "OPENAI_API_KEY"),
         help="Environment variable that contains the API key.",
     )
     parser.add_argument(
         "--base-url",
-        default=os.environ.get("OPENAI_BASE_URL") or os.environ.get("RESEARCH_DOC_BASE_URL"),
+        default=os.getenv("OPENAI_BASE_URL") or os.getenv("RESEARCH_DOC_BASE_URL"),
         help="Optional OpenAI-compatible base URL.",
     )
     parser.add_argument(
@@ -302,7 +302,7 @@ MinerU extracted page text:
 def openai_client(api_key_env: str, base_url: str | None):
     from openai import OpenAI  # type: ignore
 
-    api_key = os.environ.get(api_key_env)
+    api_key = os.getenv(api_key_env)
     if not api_key:
         raise RuntimeError(f"{api_key_env} is not set")
     kwargs: dict[str, str] = {"api_key": api_key}
@@ -430,7 +430,7 @@ def main() -> int:
         raise SystemExit(f"content.md not found: {content_path}")
     if args.provider == "openai" and not args.allow_external:
         raise SystemExit("Refusing external API call: pass --allow-external to send page images.")
-    if args.provider == "openai" and not os.environ.get(args.api_key_env):
+    if args.provider == "openai" and not os.getenv(args.api_key_env):
         raise SystemExit(f"{args.api_key_env} is not set.")
 
     if bool(args.pages) == bool(args.selection):

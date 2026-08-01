@@ -97,10 +97,10 @@ def main() -> int:
         },
         "packages": packages,
         "mineru_cli": mineru,
-        "dashscope_api_key_configured": bool(os.environ.get("DASHSCOPE_API_KEY")),
+        "dashscope_api_key_configured": bool(os.getenv("DASHSCOPE_API_KEY")),
         "ready_for_local_conversion": all(item["ok"] for item in packages)
         and bool(mineru["ok"]),
-        "ready_for_qwen_semantics": bool(os.environ.get("DASHSCOPE_API_KEY")),
+        "ready_for_qwen_semantics": bool(os.getenv("DASHSCOPE_API_KEY")),
     }
 
     if args.json:

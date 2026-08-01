@@ -12,6 +12,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: python -m pip install "PyYAML>=6,<7"
+      - run: python -m pip install "PyYAML>=6,<7" pytest
       - run: python tools/validate_skill.py
       - run: python -m compileall -q research-doc-ingest/scripts
+      - run: python -m pytest tests -q

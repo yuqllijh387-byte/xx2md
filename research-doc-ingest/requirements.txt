@@ -1,4 +1,5 @@
-mineru==3.4.4
+mineru[pipeline]==3.4.4
 openai==2.45.0
 PyMuPDF==1.28.0
 pypdf==6.14.2
+transformers>=4.57.3,<5.0.0
