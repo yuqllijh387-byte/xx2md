@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research Doc Ingest"
+  short_description: "Convert research files into AI-ready document packages."
+  default_prompt: "Use $research-doc-ingest to convert this PDF or presentation into an AI-ready research document package."
