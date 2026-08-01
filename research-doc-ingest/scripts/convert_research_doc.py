@@ -625,64 +625,84 @@ def run_mineru(source: Path, raw_dir: Path, args: argparse.Namespace) -> EngineR
             stderr=f"MinerU backend {backend} requires --mineru-url",
         )
 
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    print(
-        f"[research-doc-ingest] MinerU backend: {backend} "
-        f"(requested: {args.mineru_backend})",
-        file=sys.stderr,
-        flush=True,
-    )
-    page_count = count_pdf_pages(source) if source.suffix.lower() == ".pdf" else None
-    if (
-        page_count
-        and args.mineru_batch_size > 0
-        and page_count > args.mineru_batch_size
-    ):
-        result = run_mineru_batched(
-            exe,
-            source,
-            raw_dir,
-            backend,
-            args,
-            page_count,
+    def run_once(selected_backend: str) -> EngineResult:
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        print(
+            f"[research-doc-ingest] MinerU backend: {selected_backend} "
+            f"(requested: {args.mineru_backend})",
+            file=sys.stderr,
+            flush=True,
         )
-        if args.mineru_backend == "auto":
-            result.warnings.append(f"MinerU backend auto-selected: {backend}")
-        return result
+        page_count = count_pdf_pages(source) if source.suffix.lower() == ".pdf" else None
+        if (
+            page_count
+            and args.mineru_batch_size > 0
+            and page_count > args.mineru_batch_size
+        ):
+            result = run_mineru_batched(
+                exe,
+                source,
+                raw_dir,
+                selected_backend,
+                args,
+                page_count,
+            )
+            if args.mineru_backend == "auto":
+                result.warnings.append(f"MinerU backend auto-selected: {selected_backend}")
+            return result
 
-    command = build_mineru_command(exe, source, raw_dir, backend, args)
-    code, stdout, stderr = run_command_streaming(
-        command,
-        timeout_seconds=max(0, args.mineru_timeout_seconds),
-        stall_timeout_seconds=max(0, args.mineru_stall_timeout_seconds),
-        heartbeat_seconds=max(0, args.mineru_heartbeat_seconds),
-    )
-    warnings = []
-    if code == 0:
-        # Single-shot runs skip batching, but downstream scripts
-        # (select_semantic_pages.py) still expect the merged content list.
-        content_list = select_mineru_content_list(raw_dir)
-        if content_list is not None:
-            record = {
-                "start_page": 0,
-                "end_page": (page_count - 1) if page_count else 0,
-                "status": "completed",
-                "content_list": str(content_list.relative_to(raw_dir)),
-            }
-            merge_mineru_batch_content_lists(raw_dir, [record])
-        else:
-            warnings.append("MinerU completed without a content list")
-    if args.mineru_backend == "auto":
-        warnings.append(f"MinerU backend auto-selected: {backend}")
-    return EngineResult(
-        "mineru",
-        raw_dir,
-        command,
-        code,
-        tail(stdout),
-        tail(stderr),
-        warnings,
-    )
+        command = build_mineru_command(exe, source, raw_dir, selected_backend, args)
+        code, stdout, stderr = run_command_streaming(
+            command,
+            timeout_seconds=max(0, args.mineru_timeout_seconds),
+            stall_timeout_seconds=max(0, args.mineru_stall_timeout_seconds),
+            heartbeat_seconds=max(0, args.mineru_heartbeat_seconds),
+        )
+        warnings = []
+        if code == 0:
+            # Single-shot runs skip batching, but downstream scripts
+            # (select_semantic_pages.py) still expect the merged content list.
+            content_list = select_mineru_content_list(raw_dir)
+            if content_list is not None:
+                record = {
+                    "start_page": 0,
+                    "end_page": (page_count - 1) if page_count else 0,
+                    "status": "completed",
+                    "content_list": str(content_list.relative_to(raw_dir)),
+                }
+                merge_mineru_batch_content_lists(raw_dir, [record])
+            else:
+                warnings.append("MinerU completed without a content list")
+        if args.mineru_backend == "auto":
+            warnings.append(f"MinerU backend auto-selected: {selected_backend}")
+        return EngineResult(
+            "mineru",
+            raw_dir,
+            command,
+            code,
+            tail(stdout),
+            tail(stderr),
+            warnings,
+        )
+
+    result = run_once(backend)
+    if (
+        args.mineru_backend == "auto"
+        and result.returncode != 0
+        and backend != "pipeline"
+    ):
+        print(
+            f"[research-doc-ingest] MinerU backend {backend} failed; "
+            "retrying with pipeline",
+            file=sys.stderr,
+            flush=True,
+        )
+        retry = run_once("pipeline")
+        retry.warnings.append(
+            f"MinerU backend {backend} failed; fell back to pipeline"
+        )
+        return retry
+    return result
 
 
 def run_docling(source: Path, raw_dir: Path, args: argparse.Namespace) -> EngineResult:

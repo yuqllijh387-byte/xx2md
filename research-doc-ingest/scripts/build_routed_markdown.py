@@ -42,6 +42,13 @@ def parse_args() -> argparse.Namespace:
         default="recommended.routed.audit.md",
         help="Routing audit filename inside the package.",
     )
+    parser.add_argument(
+        "--minimal",
+        action="store_true",
+        help="After writing the routed Markdown, reduce the package to just that "
+        "Markdown and a rebuilt chunks.jsonl (runs clean_package.py logic). "
+        "Irreversible: audits, structure.json, assets and engine output are removed.",
+    )
     parser.add_argument("--title", default=None, help="Final document title.")
     return parser.parse_args()
 
@@ -327,6 +334,16 @@ def main() -> int:
     print(f"Wrote routed Markdown: {output_path}")
     print(f"Wrote routing audit: {audit_path}")
     print("Statuses: " + ", ".join(f"{key}={value}" for key, value in sorted(counts.items())))
+    if args.minimal:
+        from clean_package import clean_package
+
+        result = clean_package(package_dir, keep=args.output_content)
+        removed_count = len(list(result["removed"]))  # type: ignore[arg-type]
+        print(
+            f"Minimal package: kept {result['kept_markdown']} + "
+            f"{result['chunks_output']} ({result['chunk_count']} chunks); "
+            f"removed {removed_count} entries."
+        )
     return 0
 
 

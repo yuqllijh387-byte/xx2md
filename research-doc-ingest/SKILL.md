@@ -51,6 +51,14 @@ Prefer the bundled wrapper:
 <runtime-python> <skill>/scripts/build_routed_markdown.py "converted/input" --selection semantic_selection.json --page-semantics page_semantics_selected.jsonl --output-content input.md
 ```
 
+Optional minimal package (only final Markdown + chunks.jsonl):
+
+```powershell
+<runtime-python> <skill>/scripts/clean_package.py "converted/input" --keep input.md
+# or combine routing and cleanup:
+<runtime-python> <skill>/scripts/build_routed_markdown.py "converted/input" --selection semantic_selection.json --page-semantics page_semantics_selected.jsonl --output-content input.md --minimal
+```
+
 Useful options:
 
 ```powershell
@@ -75,7 +83,7 @@ Use the built-in PDF fallbacks only as smoke tests when no real engine is instal
 
 MinerU safety defaults:
 
-- Resolve `--mineru-backend auto` to `pipeline` when CUDA or Apple MPS acceleration is unavailable; never rely on MinerU's version-dependent default backend.
+- Resolve `--mineru-backend auto` to `pipeline` when CUDA or Apple MPS acceleration is unavailable; never rely on MinerU's version-dependent default backend. When auto resolves to a VLM backend and that run fails, the converter retries once with `pipeline` automatically (VLM backends can crash on specific pages).
 - Process long PDFs in recoverable 20-page batches by default. Set `--mineru-batch-size 0` only when one-shot processing is intentional.
 - Show MinerU output and periodic heartbeats while it runs.
 - Preserve `.engine_work` after a failed or interrupted batched run. Re-run the same source and output directory with `--resume` to reuse completed batches.
@@ -198,6 +206,7 @@ External visual APIs:
 - Run `scripts/integrate_pages.py` to merge accepted page-level semantic Markdown into sample or final integrated Markdown.
 - Run `scripts/build_recommended_markdown.py` to assemble one clean, page-complete Markdown from primary and recovery page-semantic outputs.
 - Run `scripts/build_chunks.py` to rebuild page-level chunks from the accepted Markdown artifact.
+- Run `scripts/clean_package.py` to reduce an accepted package to just the final Markdown and a rebuilt `chunks.jsonl`, removing audits, structure, assets, and engine output. Irreversible; run only after review.
 - Run `scripts/bootstrap_environment.py` once on a new computer to create the pinned runtime.
 - Run `scripts/check_environment.py` before first use and after dependency changes.
 - Read `references/setup.md` for installation, Python, MinerU, and DashScope configuration.

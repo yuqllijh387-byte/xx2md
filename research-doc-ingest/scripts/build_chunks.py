@@ -8,6 +8,7 @@ from pathlib import Path
 
 
 PAGE_HEADING_RE = re.compile(r"^## Page (?P<page>\d+)\b", flags=re.MULTILINE)
+PAGE_HEADING_CN_RE = re.compile(r"^## 第\s*(?P<page>\d+)\s*页", flags=re.MULTILINE)
 
 
 def parse_args() -> argparse.Namespace:
@@ -32,6 +33,9 @@ def source_from_structure(package_dir: Path) -> str:
 
 def page_chunks(content: str) -> list[tuple[int | None, str]]:
     matches = list(PAGE_HEADING_RE.finditer(content))
+    if not matches:
+        # Routed/integrated Markdown uses Chinese page headings (## 第 N 页).
+        matches = list(PAGE_HEADING_CN_RE.finditer(content))
     chunks: list[tuple[int | None, str]] = []
     if not matches:
         return [(None, content.strip())]

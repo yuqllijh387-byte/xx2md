@@ -68,6 +68,10 @@ curl -s -o /dev/null -w "%{http_code}\n" \
 
 The selected semantic model is `qwen3.7-plus`. External page calls require both explicit user permission and `--allow-external`.
 
+## MinerU Backend Crashes
+
+The VLM-based backends (`hybrid-engine`, `vlm-engine`) can die mid-run on specific pages (worker exits, the local API shuts down, and the task fails with an empty error). `--mineru-backend auto` now retries failed VLM runs once with the robust `pipeline` backend automatically. If you pinned a VLM backend explicitly and hit this, rerun with `--mineru-backend pipeline`.
+
 ## Semantic Page Selection and Batching
 
 `select_semantic_pages.py` needs the merged MinerU content list inside `engine_output/`. The converter writes it for every successful MinerU run, batched or single-shot. If you hit "merged MinerU content list not found" with a package produced by an older skill version, rerun the conversion with the same output directory (use `--keep-raw`).
