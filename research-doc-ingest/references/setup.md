@@ -6,7 +6,7 @@ Read this file when the skill is newly installed, when `mineru` is unavailable, 
 
 - Use Python 3.10-3.13. Prefer Python 3.11.
 - The pinned and tested stack is in `requirements.txt`. It installs `mineru[pipeline]`, which pulls the pipeline backend dependencies (torch, torchvision, transformers `<5.0.0`, accelerate, pyclipper, shapely, and friends). Installing bare `mineru` without the `[pipeline]` extra is the most common cause of `ModuleNotFoundError: No module named 'torch'` / `'transformers'` / `'pyclipper'` at conversion time.
-- `transformers` must stay `<5.0.0`. transformers 5.x changed the Qwen2VL config layout and breaks MinerU's hybrid/VLM backends with `'Qwen2VLConfig' object has no attribute 'max_position_embeddings'`.
+- `transformers` must stay `<5.0.0` for compatibility with the pinned MinerU pipeline dependency stack.
 - Keep the runtime outside the skill directory so reinstalling the skill does not remove the environment.
 - Expect MinerU to download several GB of model files during the first conversion. Keep network access and sufficient disk space available.
 
@@ -68,9 +68,9 @@ curl -s -o /dev/null -w "%{http_code}\n" \
 
 The selected semantic model is `qwen3.7-plus`. External page calls require both explicit user permission and `--allow-external`.
 
-## MinerU Backend Crashes
+## MinerU Backend
 
-The VLM-based backends (`hybrid-engine`, `vlm-engine`) can die mid-run on specific pages (worker exits, the local API shuts down, and the task fails with an empty error). `--mineru-backend auto` now retries failed VLM runs once with the robust `pipeline` backend automatically. If you pinned a VLM backend explicitly and hit this, rerun with `--mineru-backend pipeline`.
+This skill supports only MinerU's `pipeline` backend. `--mineru-backend auto` always resolves to `pipeline`, including on systems with CUDA or Apple MPS acceleration. VLM and hybrid backends are intentionally excluded because their resource requirements and runtime stability make the skill unsuitable for typical student computers.
 
 ## Semantic Page Selection and Batching
 

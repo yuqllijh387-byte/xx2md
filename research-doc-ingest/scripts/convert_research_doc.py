@@ -75,20 +75,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--mineru-backend",
         default="auto",
-        choices=[
-            "auto",
-            "pipeline",
-            "vlm-engine",
-            "hybrid-engine",
-            "vlm-http-client",
-            "hybrid-http-client",
-        ],
-        help="MinerU backend. Auto selects pipeline without local GPU/MPS acceleration.",
-    )
-    parser.add_argument(
-        "--mineru-url",
-        default=None,
-        help="Optional MinerU server URL for client backends.",
+        choices=["auto", "pipeline"],
+        help="MinerU backend. Auto always selects the supported pipeline backend.",
     )
     parser.add_argument(
         "--mineru-timeout-seconds",
@@ -289,22 +277,10 @@ def run_command_streaming(
     return returncode, "".join(output["stdout"]), "".join(output["stderr"])
 
 
-def local_acceleration_available() -> bool:
-    try:
-        import torch  # type: ignore
-
-        if torch.cuda.is_available():
-            return True
-        mps = getattr(getattr(torch, "backends", None), "mps", None)
-        return bool(mps and mps.is_available())
-    except Exception:
-        return False
-
-
 def resolve_mineru_backend(requested: str) -> str:
-    if requested != "auto":
-        return requested
-    return "hybrid-engine" if local_acceleration_available() else "pipeline"
+    if requested not in {"auto", "pipeline"}:
+        raise ValueError(f"unsupported MinerU backend: {requested}")
+    return "pipeline"
 
 
 def source_kind(source: Path) -> str:
@@ -417,8 +393,6 @@ def build_mineru_command(
         command.extend(["-m", method])
     if page_range is not None:
         command.extend(["-s", str(page_range[0]), "-e", str(page_range[1])])
-    if backend.endswith("-http-client"):
-        command.extend(["-u", str(args.mineru_url)])
     return command
 
 
@@ -616,14 +590,6 @@ def run_mineru(source: Path, raw_dir: Path, args: argparse.Namespace) -> EngineR
         return EngineResult("mineru", raw_dir, ["mineru"], 127, stderr="mineru not found")
 
     backend = resolve_mineru_backend(args.mineru_backend)
-    if backend.endswith("-http-client") and not args.mineru_url:
-        return EngineResult(
-            "mineru",
-            raw_dir,
-            ["mineru", "-b", backend],
-            2,
-            stderr=f"MinerU backend {backend} requires --mineru-url",
-        )
 
     def run_once(selected_backend: str) -> EngineResult:
         raw_dir.mkdir(parents=True, exist_ok=True)
@@ -685,24 +651,7 @@ def run_mineru(source: Path, raw_dir: Path, args: argparse.Namespace) -> EngineR
             warnings,
         )
 
-    result = run_once(backend)
-    if (
-        args.mineru_backend == "auto"
-        and result.returncode != 0
-        and backend != "pipeline"
-    ):
-        print(
-            f"[research-doc-ingest] MinerU backend {backend} failed; "
-            "retrying with pipeline",
-            file=sys.stderr,
-            flush=True,
-        )
-        retry = run_once("pipeline")
-        retry.warnings.append(
-            f"MinerU backend {backend} failed; fell back to pipeline"
-        )
-        return retry
-    return result
+    return run_once(backend)
 
 
 def run_docling(source: Path, raw_dir: Path, args: argparse.Namespace) -> EngineResult:

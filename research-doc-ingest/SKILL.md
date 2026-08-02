@@ -83,7 +83,7 @@ Use the built-in PDF fallbacks only as smoke tests when no real engine is instal
 
 MinerU safety defaults:
 
-- Resolve `--mineru-backend auto` to `pipeline` when CUDA or Apple MPS acceleration is unavailable; never rely on MinerU's version-dependent default backend. When auto resolves to a VLM backend and that run fails, the converter retries once with `pipeline` automatically (VLM backends can crash on specific pages).
+- Always resolve `--mineru-backend auto` to `pipeline`; this skill does not use MinerU VLM or hybrid backends. Never omit the backend and inherit MinerU's version-dependent default.
 - Process long PDFs in recoverable 20-page batches by default. Set `--mineru-batch-size 0` only when one-shot processing is intentional.
 - Show MinerU output and periodic heartbeats while it runs.
 - Preserve `.engine_work` after a failed or interrupted batched run. Re-run the same source and output directory with `--resume` to reuse completed batches.

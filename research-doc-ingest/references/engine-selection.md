@@ -74,7 +74,7 @@ Visual description:
 MinerU:
 
 - Use for completeness-sensitive PDF/PPT ingestion.
-- Resolve the backend explicitly. Use `pipeline` on pure CPU systems; use local `hybrid-engine` only when supported GPU/MPS acceleration is available.
+- Resolve the backend explicitly and always use `pipeline`. Do not use MinerU VLM or hybrid backends, even when GPU/MPS acceleration is available.
 - Do not omit `-b` and inherit MinerU's version-dependent default backend.
 - Use recoverable page batches for long PDFs and resume from the batch manifest after interruption.
 - Stream progress, emit heartbeats, enforce timeouts, and terminate the full local API process tree on cancellation.
