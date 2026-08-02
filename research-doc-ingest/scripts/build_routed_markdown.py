@@ -157,7 +157,7 @@ def clean_semantic_markdown(text: str, action: str) -> str:
     for line in unwrap_code_fence(text).splitlines():
         stripped = line.strip()
         if not stripped or not MARKDOWN_IMAGE_RE.search(stripped):
-            if is_branding_or_confidentiality(stripped):
+            if is_confidentiality_label(stripped):
                 continue
             if MARKDOWN_IMAGE_RE.search(stripped):
                 continue
